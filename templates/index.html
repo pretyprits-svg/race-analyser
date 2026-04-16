@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Race Card Analyser</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d0d;color:#e8e8e8;font-family:'Inter',sans-serif;min-height:100vh}
+.hero{position:relative;overflow:hidden;padding:70px 20px 55px;text-align:center;
+  background:linear-gradient(160deg,#0d0d0d 0%,#1a0000 50%,#0d0d0d 100%)}
+.hero::before{content:'';position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1547502270-e0f21959cf3e?w=1400&q=50') center/cover no-repeat;
+  opacity:.18}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;
+  background:linear-gradient(to bottom,transparent,#0d0d0d)}
+.hero-inner{position:relative;z-index:2}
+.hero-icon{font-size:4rem;display:block;filter:drop-shadow(0 0 18px #e9456088);margin-bottom:12px}
+.hero h1{font-family:'Rajdhani',sans-serif;font-size:3.4rem;font-weight:700;letter-spacing:3px;
+  background:linear-gradient(90deg,#c0001a,#e94560,#ff6b6b,#e94560,#c0001a);
+  background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:shimmer 4s linear infinite}
+@keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+.hero-sub{color:#b08080;font-size:1rem;margin-top:10px;letter-spacing:.5px}
+.hero-badges{display:flex;justify-content:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+.hero-badge{background:#1f0000;border:1px solid #e9456044;border-radius:20px;
+  padding:5px 16px;font-size:.8rem;color:#e07070;letter-spacing:.3px}
+.upload-card{background:linear-gradient(145deg,#161616,#1a0808);
+  border:1px solid #e9456033;border-radius:18px;padding:40px 44px;
+  max-width:580px;margin:40px auto;box-shadow:0 12px 50px #00000099}
+.upload-card h5{font-family:'Rajdhani',sans-serif;font-size:1.5rem;color:#e94560;
+  letter-spacing:1px;margin-bottom:5px}
+.upload-card .sub{color:#666;font-size:.88rem;margin-bottom:24px}
+.file-btn{display:flex;align-items:center;gap:14px;width:100%;background:#1e0808;
+  border:1.5px solid #e9456055;border-radius:12px;padding:14px 20px;
+  cursor:pointer;transition:all .25s;text-align:left}
+.file-btn:hover{border-color:#e94560;background:#280e0e;box-shadow:0 0 18px #e9456022}
+.file-btn-icon{font-size:1.8rem;flex-shrink:0}
+.file-btn-text strong{display:block;color:#e07070;font-size:.95rem}
+.file-btn-text span{color:#555;font-size:.8rem}
+#fileName{color:#e94560;font-size:.85rem;font-style:italic;margin-top:10px;min-height:18px;padding-left:4px}
+.divider{border:none;border-top:1px solid #2a0808;margin:20px 0}
+.btn-analyse{width:100%;background:linear-gradient(135deg,#a0001a,#e94560,#ff4466);
+  border:none;color:#fff;font-weight:700;font-family:'Rajdhani',sans-serif;
+  font-size:1.15rem;letter-spacing:1.5px;padding:14px;border-radius:12px;
+  transition:transform .15s,box-shadow .2s;cursor:pointer}
+.btn-analyse:hover{transform:translateY(-2px);box-shadow:0 8px 28px #e9456055}
+.btn-analyse:active{transform:translateY(0)}
+#spinner{display:none;text-align:center;margin-top:18px}
+.spin-ring{width:44px;height:44px;border:4px solid #2a0808;border-top-color:#e94560;
+  border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+#spinner p{color:#666;font-size:.85rem;margin-top:8px}
+#results{max-width:1440px;margin:0 auto;padding:0 20px 70px}
+.results-bar{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:20px;padding:14px 20px;background:#160606;
+  border:1px solid #e9456033;border-radius:12px}
+.results-bar h4{font-family:'Rajdhani',sans-serif;font-size:1.7rem;color:#e94560;margin:0}
+.btn-dl{background:linear-gradient(135deg,#1db954,#0f8040);border:none;color:#fff;
+  font-weight:700;padding:10px 30px;border-radius:10px;font-size:.92rem;
+  letter-spacing:.5px;cursor:pointer;transition:transform .15s}
+.btn-dl:hover{transform:translateY(-2px)}
+.nav-tabs{border-bottom:2px solid #e9456033;gap:6px;flex-wrap:wrap}
+.nav-tabs .nav-link{color:#666;border:1.5px solid transparent;
+  border-radius:10px 10px 0 0;font-family:'Rajdhani',sans-serif;
+  font-size:1rem;letter-spacing:.5px;padding:8px 22px;transition:.2s}
+.nav-tabs .nav-link:hover{color:#e94560;border-color:#e9456044}
+.nav-tabs .nav-link.active{background:linear-gradient(180deg,#200808,#160404);
+  color:#e94560;border-color:#e94560;border-bottom-color:#160404}
+.race-meta{color:#777;font-size:.85rem;margin:10px 0 16px;display:flex;gap:18px;align-items:center}
+.race-meta span{background:#1a0404;border:1px solid #e9456033;
+  border-radius:6px;padding:3px 12px;color:#c07070}
+.tbl-wrap{border-radius:14px;overflow:auto;box-shadow:0 4px 30px #00000077;
+  border:1px solid #e9456022;max-height:70vh}
+.rtable{width:100%;border-collapse:collapse;font-size:12.5px}
+.rtable thead th{background:#1a0404;color:#e94560;font-family:'Rajdhani',sans-serif;
+  font-size:12px;letter-spacing:.5px;padding:11px 13px;white-space:nowrap;
+  border-bottom:2px solid #e9456055;position:sticky;top:0;z-index:1}
+.rtable tbody tr{background:#111;transition:background .12s}
+.rtable tbody tr:nth-child(even){background:#150404}
+.rtable tbody tr:hover{background:#1e0808}
+.rtable td{padding:9px 13px;border-bottom:1px solid #ffffff08;white-space:nowrap;vertical-align:middle}
+.col-name{color:#ff8080;font-weight:600;font-size:13px}
+.col-sr{color:#e94560;font-weight:700}
+.col-best{color:#1db954;font-weight:700}
+.col-num{color:#aaa}
+.odds-inp{background:#1a0404;border:1px solid #e9456066;color:#e94560;
+  border-radius:7px;padding:4px 8px;width:70px;font-size:12px;text-align:center;transition:border-color .2s}
+.odds-inp:focus{outline:none;border-color:#e94560;background:#220808}
+.row-ft{font-style:italic}
+.badge-ft{background:#3a0a0a;color:#e94560;font-size:10px;padding:2px 7px;
+  border-radius:10px;margin-left:6px;font-style:normal;vertical-align:middle;
+  border:1px solid #e9456044}
+footer{text-align:center;padding:20px;color:#333;font-size:.78rem;border-top:1px solid #1a0000}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="hero-icon">&#127943;</span>
+    <h1>RACE CARD ANALYSER</h1>
+    <p class="hero-sub">Professional speed ratings &amp; value analysis from your race card PDF</p>
+    <div class="hero-badges">
+      <span class="hero-badge">&#9889; Speed Rating</span>
+      <span class="hero-badge">&#128202; Avg Last 3 Races</span>
+      <span class="hero-badge">&#127919; Value Score</span>
+      <span class="hero-badge">&#128229; CSV Export</span>
+    </div>
+  </div>
+</div>
+
+<div class="upload-card">
+  <h5>&#128196; Upload Race Card</h5>
+  <p class="sub">Select your PDF race card to generate instant horse analysis</p>
+  <label class="file-btn" for="pdfInput">
+    <span class="file-btn-icon">&#128194;</span>
+    <div class="file-btn-text">
+      <strong>Choose PDF File</strong>
+      <span>Click to browse your files</span>
+    </div>
+  </label>
+  <input type="file" id="pdfInput" accept=".pdf" hidden>
+  <div id="fileName"></div>
+  <hr class="divider">
+  <button class="btn-analyse" onclick="uploadPDF()">&#128269;&nbsp; ANALYSE RACE CARD</button>
+  <div id="spinner">
+    <div class="spin-ring"></div>
+    <p>Parsing PDF and computing ratings...</p>
+  </div>
+</div>
+
+<div id="results" style="display:none">
+  <div class="results-bar">
+    <h4>&#127942; Race Analysis</h4>
+    <button class="btn-dl" onclick="downloadCSV()">&#11015;&#65039;&nbsp; Download CSV</button>
+  </div>
+  <ul class="nav nav-tabs mb-3" id="raceTabs"></ul>
+  <div class="tab-content" id="raceContent"></div>
+</div>
+
+<footer>Race Card Analyser &mdash; For informational purposes only</footer>
+
+<script>
+var raceData = [];
+
+document.getElementById('pdfInput').addEventListener('change', function() {
+  var fn = this.files[0] ? this.files[0].name : '';
+  document.getElementById('fileName').textContent = fn ? '\u2705 ' + fn : '';
+});
+
+function uploadPDF() {
+  var inp = document.getElementById('pdfInput');
+  if (!inp.files[0]) { alert('Please select a PDF file first.'); return; }
+  document.getElementById('spinner').style.display = 'block';
+  document.querySelector('.btn-analyse').disabled = true;
+  var fd = new FormData();
+  fd.append('pdf', inp.files[0]);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/upload');
+  xhr.onload = function() {
+    document.getElementById('spinner').style.display = 'none';
+    document.querySelector('.btn-analyse').disabled = false;
+    if (xhr.status === 200) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data.error) { alert('Server error: ' + data.error); return; }
+        raceData = data;
+        renderResults(data);
+      } catch(e) { alert('Parse error: ' + e); }
+    } else {
+      alert('Upload failed: ' + xhr.statusText);
+    }
+  };
+  xhr.onerror = function() {
+    document.getElementById('spinner').style.display = 'none';
+    document.querySelector('.btn-analyse').disabled = false;
+    alert('Network error during upload.');
+  };
+  xhr.send(fd);
+}
+
+var COLS = ['Sl.No','Name','Old Weight','New Weight','Old Distance','Current Distance',
+  'Old Time(sec)','PNR Race','Standard PNR','Adjusted Time','Speed Rating',
+  'ODDS','Final Rating','Speed Rank','Odds Rank','Value Score'];
+
+function val(v) { return (v !== undefined && v !== null) ? v : ''; }
+
+function buildTable(rows, ri) {
+  var hdr = '';
+  for (var ci = 0; ci < COLS.length; ci++) hdr += '<th>' + COLS[ci] + '</th>';
+  var body = '';
+  for (var j = 0; j < rows.length; j++) {
+    var r = rows[j];
+    var isFirstTimer = (r['Speed Rating'] === 'NA');
+    var trClass = isFirstTimer ? ' class="row-ft"' : '';
+    var cells = '';
+    for (var ci2 = 0; ci2 < COLS.length; ci2++) {
+      var c = COLS[ci2];
+      var v = r[c];
+      var NA_COLS = ['Old Weight','Old Distance','Old Time(sec)','PNR Race','Standard PNR',
+                     'Adjusted Time','Speed Rating','ODDS','Final Rating','Speed Rank','Odds Rank','Value Score'];
+      if (isFirstTimer) {
+        if (c === 'Name') {
+          var cleanName = String(v).replace(' \u26a0\ufe0f First Timer', '');
+          cells += '<td class="col-name">' + cleanName + '<span class="badge-ft">First Timer</span></td>';
+        } else if (NA_COLS.indexOf(c) !== -1) {
+          cells += '<td>NA</td>';
+        } else {
+          cells += '<td>' + val(v) + '</td>';
+        }
+      } else if (c === 'ODDS') {
+        cells += '<td><input class="odds-inp" type="number" step="0.1" value="' + (v||0) + '" onchange="updateOdds(' + ri + ',' + j + ',this.value)"></td>';
+      } else if (c === 'Name') {
+        cells += '<td class="col-name">' + val(v) + '</td>';
+      } else if (c === 'Speed Rating') {
+        cells += '<td class="col-sr">' + val(v) + '</td>';
+      } else if ((c === 'Speed Rank' || c === 'Odds Rank') && v === 1) {
+        cells += '<td class="col-best">\u2605 1</td>';
+      } else {
+        cells += '<td>' + val(v) + '</td>';
+      }
+    }
+    body += '<tr' + trClass + '>' + cells + '</tr>';
+  }
+  return '<div class="tbl-wrap"><table class="rtable"><thead><tr>' + hdr + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+}
+
+function renderResults(data) {
+  var resultsDiv = document.getElementById('results');
+  resultsDiv.style.display = 'block';
+  var tabsHtml = '';
+  var contentHtml = '';
+  for (var i = 0; i < data.length; i++) {
+    var race = data[i];
+    var isFirst = (i === 0);
+    tabsHtml += '<li class="nav-item">'
+      + '<a class="nav-link' + (isFirst ? ' active' : '') + '" data-bs-toggle="tab" href="#race' + i + '">'
+      + 'Race ' + race.race_num + '</a></li>';
+    var meta = '<div class="race-meta">'
+      + '<span>\uD83C\uDFDF\uFE0F ' + race.race_name + '</span>'
+      + '<span>\uD83D\uDCCF ' + race.current_dist + 'm</span>'
+      + '<span>\uD83D\uDC0E ' + race.rows.length + ' runners</span></div>';
+    contentHtml += '<div class="tab-pane fade' + (isFirst ? ' show active' : '') + '" id="race' + i + '">'
+      + meta + buildTable(race.rows, i) + '</div>';
+  }
+  document.getElementById('raceTabs').innerHTML = tabsHtml;
+  document.getElementById('raceContent').innerHTML = contentHtml;
+  setTimeout(function() { resultsDiv.scrollIntoView({behavior:'smooth'}); }, 150);
+}
+
+function updateOdds(ri, j, val2) {
+  raceData[ri].rows[j]['ODDS'] = parseFloat(val2) || 0;
+  recalcRace(ri);
+}
+
+function recalcRace(ri) {
+  var rows = raceData[ri].rows;
+  var valid = rows.filter(function(r) { return r['Speed Rating'] !== 0; });
+  var speeds = valid.map(function(r) { return r['Speed Rating']; })
+    .filter(function(v, i, a) { return a.indexOf(v) === i; })
+    .sort(function(a, b) { return b - a; });
+  var oddsL = valid.map(function(r) { return r['ODDS']; })
+    .filter(function(v, i, a) { return a.indexOf(v) === i; })
+    .sort(function(a, b) { return a - b; });
+  valid.forEach(function(r) {
+    r['Speed Rank']   = speeds.indexOf(r['Speed Rating']) + 1;
+    r['Odds Rank']    = oddsL.indexOf(r['ODDS']) + 1;
+    r['Final Rating'] = r['ODDS'] ? parseFloat((r['Speed Rating'] * (1/(r['ODDS']+1))).toFixed(2)) : 0;
+    r['Value Score']  = r['Odds Rank'] ? parseFloat((r['Speed Rank']/r['Odds Rank']).toFixed(2)) : 0;
+  });
+  var pane = document.getElementById('race' + ri);
+  pane.querySelector('.tbl-wrap').outerHTML = buildTable(rows, ri);
+}
+
+function downloadCSV() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/download');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.responseType = 'blob';
+  xhr.onload = function() {
+    var blob = xhr.response;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'race_analysis.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  xhr.send(JSON.stringify(raceData));
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
