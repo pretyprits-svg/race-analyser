@@ -127,7 +127,7 @@ footer{text-align:center;padding:20px;color:#333;font-size:.78rem;border-top:1px
   <button class="btn-analyse" onclick="uploadPDF()">&#128269;&nbsp; ANALYSE RACE CARD</button>
   <div id="spinner">
     <div class="spin-ring"></div>
-    <p>Parsing PDF and computing ratings...</p>
+    <p id="spinnerMsg">Uploading PDF...</p>
   </div>
 </div>
 
@@ -154,31 +154,51 @@ function uploadPDF() {
   var inp = document.getElementById('pdfInput');
   if (!inp.files[0]) { alert('Please select a PDF file first.'); return; }
   document.getElementById('spinner').style.display = 'block';
+  document.getElementById('spinnerMsg').textContent = 'Uploading PDF...';
   document.querySelector('.btn-analyse').disabled = true;
   var fd = new FormData();
   fd.append('pdf', inp.files[0]);
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/upload');
   xhr.onload = function() {
-    document.getElementById('spinner').style.display = 'none';
-    document.querySelector('.btn-analyse').disabled = false;
     if (xhr.status === 200) {
-      try {
-        var data = JSON.parse(xhr.responseText);
-        if (data.error) { alert('Server error: ' + data.error); return; }
-        raceData = data;
-        renderResults(data);
-      } catch(e) { alert('Parse error: ' + e); }
+      var resp = JSON.parse(xhr.responseText);
+      if (resp.error) {
+        stopSpinner(); alert('Error: ' + resp.error); return;
+      }
+      document.getElementById('spinnerMsg').textContent = 'Analysing race card... please wait';
+      pollResult(resp.job_id, 0);
     } else {
-      alert('Upload failed: ' + xhr.statusText);
+      stopSpinner(); alert('Upload failed: ' + xhr.statusText);
     }
   };
-  xhr.onerror = function() {
-    document.getElementById('spinner').style.display = 'none';
-    document.querySelector('.btn-analyse').disabled = false;
-    alert('Network error during upload.');
-  };
+  xhr.onerror = function() { stopSpinner(); alert('Network error during upload.'); };
   xhr.send(fd);
+}
+
+function pollResult(jobId, attempts) {
+  if (attempts > 60) { stopSpinner(); alert('Processing timed out. Please try again.'); return; }
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/result/' + jobId);
+  xhr.onload = function() {
+    var resp = JSON.parse(xhr.responseText);
+    if (resp.status === 'done') {
+      stopSpinner();
+      raceData = resp.result;
+      renderResults(resp.result);
+    } else if (resp.status === 'error') {
+      stopSpinner(); alert('Error: ' + resp.error);
+    } else {
+      setTimeout(function() { pollResult(jobId, attempts + 1); }, 2000);
+    }
+  };
+  xhr.onerror = function() { stopSpinner(); alert('Network error while checking result.'); };
+  xhr.send();
+}
+
+function stopSpinner() {
+  document.getElementById('spinner').style.display = 'none';
+  document.querySelector('.btn-analyse').disabled = false;
 }
 
 var COLS = ['Sl.No','Name','Old Weight','New Weight','Old Distance','Current Distance',
