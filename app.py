@@ -1,10 +1,13 @@
-import os, io, csv, json
+import os, io, csv, json, threading, uuid
 from flask import Flask, render_template, request, jsonify, send_file
 from race_parser import parse_pdf, compute_race
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+# In-memory job store
+jobs = {}
 
 @app.route("/")
 def index():
@@ -15,21 +18,42 @@ def upload():
     f = request.files.get("pdf")
     if not f:
         return jsonify({"error": "No file"}), 400
-    path = os.path.join(app.config["UPLOAD_FOLDER"], "race.pdf")
+
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "processing"}
+
+    path = os.path.join(app.config["UPLOAD_FOLDER"], job_id + ".pdf")
     f.save(path)
-    try:
-        races = parse_pdf(path)
-        result = []
-        for race in races:
-            rows = compute_race(race)
-            if rows:
-                result.append({"race_num": race["race_num"],
-                                "race_name": race["race_name"],
-                                "current_dist": race["current_dist"],
-                                "rows": rows})
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+    def process():
+        try:
+            races = parse_pdf(path)
+            result = []
+            for race in races:
+                rows = compute_race(race)
+                if rows:
+                    result.append({
+                        "race_num": race["race_num"],
+                        "race_name": race["race_name"],
+                        "current_dist": race["current_dist"],
+                        "rows": rows
+                    })
+            jobs[job_id] = {"status": "done", "result": result}
+        except Exception as e:
+            jobs[job_id] = {"status": "error", "error": str(e)}
+        finally:
+            try: os.remove(path)
+            except: pass
+
+    threading.Thread(target=process, daemon=True).start()
+    return jsonify({"job_id": job_id})
+
+@app.route("/result/<job_id>")
+def result(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify(job)
 
 @app.route("/download", methods=["POST"])
 def download():
